@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product List</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      h1 {
+        text-align: center;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      li {
+        border: 1px solid #ccc;
+        margin: 5px;
+        padding: 10px;
+        border-radius: 5px;
+      }
+
+      .pagination {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+      }
+
+      .pagination a {
+        padding: 10px;
+        margin: 0 5px;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+
+      .pagination .active {
+        background-color: #4caf50;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Product List</h1>
+    <ul id="productList"></ul>
+    <div class="pagination" id="pagination"></div>
+
+    <script>
+      const API_URL = "https://api.valantis.store:41000";
+      const API_PASSWORD = "Valantis";
+      let currentPage = 0;
+      const md5 = (str) => {
+        return str;
+      };
+
+      const fetchProducts = async (pageNumber = 0) => {
+        try {
+          const response = await fetch(`${API_URL}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "X-Auth": `${API_PASSWORD}_${getTimestamp()}`,
+            },
+            body: JSON.stringify({
+              action: "get_items",
+              params: {
+                offset: pageNumber * 50,
+                limit: 50,
+              },
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.result) {
+            displayProducts(data.result);
+            updatePagination(pageNumber, Math.ceil(data.result.length / 50));
+          }
+        } catch (error) {
+          console.error("Error fetching products:", error);
+        }
+      };
+
+      const displayProducts = (products) => {
+        const productList = document.getElementById("productList");
+        productList.innerHTML = "";
+
+        products.forEach((product) => {
+          const li = document.createElement("li");
+          li.innerHTML = `ID: ${product.id}, Name: ${product.product}, Price: ${
+            product.price
+          }, Brand: ${product.brand || "N/A"}`;
+          productList.appendChild(li);
+        });
+      };
+
+      const updatePagination = (currentPage, pageCount) => {
+        const pagination = document.getElementById("pagination");
+        pagination.innerHTML = "";
+
+        for (let i = 0; i < pageCount; i++) {
+          const pageLink = document.createElement("a");
+          pageLink.href = "#";
+          pageLink.textContent = i + 1;
+          pageLink.addEventListener("click", () => fetchProducts(i));
+          if (i === currentPage) {
+            pageLink.classList.add("active");
+          }
+          pagination.appendChild(pageLink);
+        }
+      };
+
+      const getTimestamp = () => {
+        const now = new Date();
+        const timestamp = `${now.getUTCFullYear()}${
+          now.getUTCMonth() + 1
+        }${now.getUTCDate()}`;
+        return timestamp;
+      };
+      console.log(`${API_PASSWORD}_${getTimestamp()}`);
+
+      document.addEventListener("DOMContentLoaded", () => {
+        fetchProducts();
+      });
+    </script>
+  </body>
+</html>
